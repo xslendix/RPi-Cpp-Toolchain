@@ -48,61 +48,6 @@ RUN mkdir -p ${RPI_SYSROOT}/usr/local && \
 COPY --chown=develop:develop tools/ ./tools/
 ENV PATH="/home/develop/tools:${PATH}"
 
-# Zlib, OpenSSL, Python dependencies 
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Zlib build
-COPY --chown=develop:develop install-scripts/zlib-build.sh .
-RUN chmod +x zlib-build.sh && ./zlib-build.sh
-
-# Zlib ARM
-COPY --chown=develop:develop install-scripts/zlib.sh .
-RUN chmod +x zlib.sh && ./zlib.sh
- 
-# OpenSSL build
-COPY --chown=develop:develop install-scripts/openssl-build.sh .
-RUN chmod +x openssl-build.sh && ./openssl-build.sh
-
-# OpenSSL ARM
-COPY --chown=develop:develop install-scripts/openssl.sh .
-RUN chmod +x openssl.sh && ./openssl.sh
-
-# FFI build
-COPY --chown=develop:develop install-scripts/libffi-build.sh .
-RUN chmod +x libffi-build.sh && ./libffi-build.sh
-
-# FFI ARM
-COPY --chown=develop:develop install-scripts/libffi.sh .
-RUN chmod +x libffi.sh && ./libffi.sh
-
-# Bzip2 ARM
-COPY --chown=develop:develop install-scripts/bzip2.sh .
-RUN chmod +x bzip2.sh && ./bzip2.sh
-
-# GNU NCurses build
-COPY --chown=develop:develop install-scripts/ncurses-build.sh .
-RUN chmod +x ncurses-build.sh && ./ncurses-build.sh
-
-# GNU NCurses ARM
-COPY --chown=develop:develop install-scripts/ncurses.sh .
-RUN chmod +x ncurses.sh && ./ncurses.sh
-
-# GNU Readline ARM
-COPY --chown=develop:develop install-scripts/readline.sh .
-RUN chmod +x readline.sh && ./readline.sh
-
-# GNU DBM ARM
-COPY --chown=develop:develop install-scripts/dbm.sh .
-RUN chmod +x dbm.sh && ./dbm.sh
-
-# SQLite ARM
-COPY --chown=develop:develop install-scripts/sqlite.sh .
-RUN chmod +x sqlite.sh && ./sqlite.sh
-
-# UUID ARM
-COPY --chown=develop:develop install-scripts/uuid.sh .
-RUN chmod +x uuid.sh && ./uuid.sh
-
 # Userland, FFmpeg, ...
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
  
@@ -111,93 +56,12 @@ COPY install-scripts/${HOST_TRIPLE}.userland.cmake .
 COPY --chown=develop:develop install-scripts/userland.sh .
 RUN chmod +x userland.sh && ./userland.sh
 
-# VPX ARM
-COPY --chown=develop:develop install-scripts/vpx.sh .
-RUN chmod +x vpx.sh && ./vpx.sh
-
-# x264 ARM
-COPY --chown=develop:develop install-scripts/x264.sh .
-RUN chmod +x x264.sh && ./x264.sh
-
-# Xvid ARM
-COPY --chown=develop:develop install-scripts/xvid.sh .
-RUN chmod +x xvid.sh && ./xvid.sh
-
-# FFmpeg ARM
-COPY --chown=develop:develop install-scripts/ffmpeg.sh .
-RUN chmod +x ffmpeg.sh && ./ffmpeg.sh
-
-# X11
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# X11 ARM
-COPY --chown=develop:develop install-scripts/x11.sh .
-COPY --chown=develop:develop patches/libx11-1.6.9.configure.ac.patch .
-RUN chmod +x x11.sh && ./x11.sh
-
-# Tcl/Tk
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Tcl/Tk ARM
-COPY --chown=develop:develop install-scripts/tk.sh .
-RUN chmod +x tk.sh && ./tk.sh
-
-# Python
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# Configure LD so it finds libffi.so.7
-USER root
-RUN echo "/home/develop/.local/lib" > /etc/ld.so.conf.d/home.local.conf \
- && ldconfig
-USER develop
-RUN ln -s /usr/lib/ssl /home/develop/.local/ssl
-
-# Python build
-COPY --chown=develop:develop install-scripts/python-build.sh .
-RUN chmod +x python-build.sh && ./python-build.sh
-ENV PATH="/home/develop/.local/bin:${PATH}"
-
-# Python ARM
-COPY --chown=develop:develop install-scripts/python.sh .
-RUN chmod +x python.sh && ./python.sh
-
 # NumPy, SciPy, OpenCV
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-# OpenBLAS ARM
-COPY --chown=develop:develop install-scripts/openblas.sh .
-RUN chmod +x openblas.sh && ./openblas.sh
-
-# Install NumPy and Crossenv on build
-RUN python3.9 -m pip install crossenv
-RUN python3.9 -m crossenv "${RPI_SYSROOT}/usr/local/bin/python3.9" crossenv
-
-# Wheel, Cython, Pybind11, Numpy and Scipy packages ARM
-RUN . crossenv/bin/activate && pip install wheel cython pybind11
-COPY --chown=develop:develop install-scripts/numpy.sh .
-COPY --chown=develop:develop patches/npymath.ini.patch .
-RUN chmod +x numpy.sh && ./numpy.sh
-COPY --chown=develop:develop install-scripts/pythran.sh .
-RUN chmod +x pythran.sh && ./pythran.sh
-COPY --chown=develop:develop patches/numpy.utils.py.patch .
-RUN . crossenv/bin/activate && patch "$VIRTUAL_ENV/../build/lib/python3.9/site-packages/numpy/lib/utils.py" numpy.utils.py.patch
-COPY --chown=develop:develop install-scripts/scipy.sh .
-RUN chmod +x scipy.sh && ./scipy.sh
 
 # OpenCV ARM
 COPY --chown=develop:develop install-scripts/opencv.sh .
 RUN chmod +x opencv.sh && ./opencv.sh
-
-# Move the compiled Python packages to the staging area
-RUN rm -rf crossenv/cross/lib/python3.9/site-packages/__pycache__ && \
-    mv "crossenv/cross/lib/python3.9/site-packages/"* \
-       "${RPI_STAGING}/usr/local/lib/python3.9/site-packages"
-
-# GoogleTest
-# ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-COPY --chown=develop:develop install-scripts/${HOST_TRIPLE}.cmake .
-COPY --chown=develop:develop install-scripts/googletest.sh .
-RUN chmod +x googletest.sh && ./googletest.sh
 
 # System libraries
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -220,43 +84,6 @@ RUN mkdir -p "${RPI_STAGING}/usr/local/lib/${HOST_TRIPLE_LIB_DIR}/" && \
 
 # Development build
 # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-FROM build as developer-build
-
-# DistCC ARM
-COPY --chown=develop:develop install-scripts/distcc.sh .
-COPY --chown=develop:develop patches/pump.patch .
-RUN chmod +x distcc.sh && ./distcc.sh
-
-# Make ARM
-COPY --chown=develop:develop install-scripts/make.sh .
-RUN chmod +x make.sh && ./make.sh
-
-# CMake ARM
-COPY --chown=develop:develop install-scripts/cmake.sh .
-RUN chmod +x cmake.sh && ./cmake.sh
-
-# CCache ARM
-COPY --chown=develop:develop install-scripts/ccache.sh .
-RUN chmod +x ccache.sh && ./ccache.sh
-
-# cURL ARM
-COPY --chown=develop:develop install-scripts/curl.sh .
-RUN chmod +x curl.sh && ./curl.sh
-
-# Git ARM
-COPY --chown=develop:develop install-scripts/git.sh .
-COPY --chown=develop:develop patches/git-2.25.0.patch .
-RUN chmod +x git.sh && ./git.sh
-
-# CMake build
-COPY --chown=develop:develop install-scripts/cmake-build.sh .
-RUN chmod +x cmake-build.sh && ./cmake-build.sh
-
-# Ninja ARM
-COPY --chown=develop:develop install-scripts/ninja.sh .
-RUN chmod +x ninja.sh && ./ninja.sh
-
 # # Copy the GCC toolchain
 # COPY --from=cross-native-toolchain \
 #     "/home/develop/x-tools/HOST-${HOST_TRIPLE_NO_VENDOR}" \

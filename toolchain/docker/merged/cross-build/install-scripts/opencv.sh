@@ -24,9 +24,7 @@ esac
 
 # Configure
 . cross-pkg-config
-. crossenv/bin/activate
 pushd opencv-$version/build-arm
-NUMPY_INC=$(python3.9 -c "import numpy; print(numpy.get_include(),end='')")
 cmake \
     -DCMAKE_TOOLCHAIN_FILE=../platforms/linux/arm.toolchain.cmake \
     -DGNU_MACHINE="${HOST_TRIPLE}" \
@@ -35,20 +33,17 @@ cmake \
     -DENABLE_NEON=${OPENCV_ENABLE_NEON} \
     -DENABLE_VFPV3=${OPENCV_ENABLE_VFPV3} \
     -DOPENCV_ENABLE_NONFREE=ON \
-    -DWITH_JPEG=ON -DBUILD_JPEG=ON \
-    -DWITH_PNG=ON -DBUILD_PNG=ON \
-    -DWITH_TBB=ON -DBUILD_TBB=ON \
-    -DWITH_FFMPEG=ON \
+    -DWITH_JPEG=OFF -DBUILD_JPEG=OFF \
+    -DWITH_PNG=OFF -DBUILD_PNG=OFF \
+    -DWITH_TBB=OFF -DBUILD_TBB=OFF \
+    -DWITH_FFMPEG=OFF \
     -DWITH_V4L=ON -DWITH_LIBV4L=ON \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_INSTALL_PREFIX="/usr/local" \
     -DOPENCV_GENERATE_PKGCONFIG=ON \
     -DBUILD_TESTS=OFF -DBUILD_PERF_TESTS=OFF \
-    -DPYTHON3_INCLUDE_PATH="${RPI_SYSROOT}/usr/local/include/python3.9" \
-    -DPYTHON3_LIBRARIES="${RPI_SYSROOT}/usr/local/lib/libpython3.9.so" \
-    -DPYTHON3_NUMPY_INCLUDE_DIRS="$NUMPY_INC" \
     -DBUILD_OPENCV_PYTHON2=OFF \
-    -DBUILD_OPENCV_PYTHON3=ON \
+    -DBUILD_OPENCV_PYTHON3=OFF \
     -DBUILD_EXAMPLES=OFF \
     .. \
  || { cat CMakeFiles/CMakeError.log && false; }
